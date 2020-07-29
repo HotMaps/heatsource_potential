@@ -1,10 +1,24 @@
+import os
+import tempfile
 import unittest
-from werkzeug.exceptions import NotFound
+
+# from pprint import pprint
+
 from app import create_app
 import os.path
 from shutil import copyfile
 from .test_client import TestClient
-UPLOAD_DIRECTORY = '/var/hotmaps/cm_files_uploaded'
+from app.constant import INPUTS_CALCULATION_MODULE
+
+
+# Add this check to be able to execute and debug code locally with:
+# LOCAL=true python3 test.py
+if os.environ.get("LOCAL", False):
+    UPLOAD_DIRECTORY = os.path.join(
+        tempfile.gettempdir(), "hotmaps", "cm_files_uploaded"
+    )
+else:
+    UPLOAD_DIRECTORY = "/var/hotmaps/cm_files_uploaded"
 
 if not os.path.exists(UPLOAD_DIRECTORY):
     os.makedirs(UPLOAD_DIRECTORY)
@@ -12,41 +26,43 @@ if not os.path.exists(UPLOAD_DIRECTORY):
 
 
 class TestAPI(unittest.TestCase):
-
+    vector_test_path = os.path.join("tests", "data", "vector_for_test.json")
+    vector_updir_path = os.path.join(UPLOAD_DIRECTORY, "vector_for_test.json")
 
     def setUp(self):
-        self.app = create_app(os.environ.get('FLASK_CONFIG', 'development'))
+        self.app = create_app(os.environ.get("FLASK_CONFIG", "development"))
         self.ctx = self.app.app_context()
         self.ctx.push()
-
         self.client = TestClient(self.app,)
 
     def tearDown(self):
-
         self.ctx.pop()
 
-
-    def test_compute(self):
-        raster_file_path = 'tests/data/raster_for_test.tif'
-        # simulate copy from HTAPI to CM
-        save_path = UPLOAD_DIRECTORY+"/raster_for_test.tif"
-        copyfile(raster_file_path, save_path)
-
+    def test_params_check(self):
         inputs_raster_selection = {}
         inputs_parameter_selection = {}
         inputs_vector_selection = {}
-        inputs_raster_selection["heat"]  = save_path
-        inputs_vector_selection["heating_technologies_eu28"]  = {}
-        inputs_parameter_selection["multiplication_factor"] = 2
+        inputs_parameter_selection["within_dist"] = 1000  # m
+        inputs_parameter_selection["near_dist"] = 100  # m
 
         # register the calculation module a
-        payload = {"inputs_raster_selection": inputs_raster_selection,
-                   "inputs_parameter_selection": inputs_parameter_selection,
-                   "inputs_vector_selection": inputs_vector_selection}
+        payload = {
+            "inputs_raster_selection": inputs_raster_selection,
+            "inputs_parameter_selection": inputs_parameter_selection,
+            "inputs_vector_selection": inputs_vector_selection,
+        }
 
-
-        rv, json = self.client.post('computation-module/compute/', data=payload)
+        rv, json = self.client.post("computation-module/compute/", data=payload)
 
         self.assertTrue(rv.status_code == 200)
+        # check we have just one indicator the warning
+        self.assertEqual(
+            len(json["result"]["indicator"]), 1, msg="More than a worning is present"
+        )
 
-
+        # check the content of the warning
+        warning = json["result"]["indicator"][0]
+        self.assertEqual(
+            warning["name"],
+            "near distance limit (100) <= within distance limit (1000), please correct the values and try again",
+        )

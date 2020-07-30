@@ -1,4 +1,7 @@
 import os
+	
+from pathlib import Path
+
 from flask import Flask, jsonify, g
 from .constant import SIGNATURE,CM_NAME
 import logging.config
@@ -53,7 +56,7 @@ def create_app(config_name):
     """Create swagger documentation"""
     swagger = Swagger(app)
     # apply configuration
-    cfg = os.path.join(os.getcwd(), 'config', config_name + '.py')
+    cfg = Path(__file__).resolve().parent.parent /'config' / (config_name + '.py')
     app.config.from_pyfile(cfg)
 
     # initialize extensions

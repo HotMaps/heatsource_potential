@@ -66,3 +66,33 @@ class TestAPI(unittest.TestCase):
             warning["name"],
             "near distance limit (100) <= within distance limit (1000), please correct the values and try again",
         )
+
+    # def test_computaion(self):
+    #     inputs_raster_selection = {}
+    #     inputs_parameter_selection = {}
+    #     inputs_vector_selection = {}
+    #     inputs_parameter_selection["within_dist"] = 150  # m
+    #     inputs_parameter_selection["near_dist"] = 1000  # m
+
+    #     # register the calculation module a
+    #     payload = {
+    #         "inputs_raster_selection": inputs_raster_selection,
+    #         "inputs_parameter_selection": inputs_parameter_selection,
+    #         "inputs_vector_selection": inputs_vector_selection,
+    #     }
+
+    #     rv, json = self.client.post("computation-module/compute/", data=payload)
+
+    #     self.assertTrue(rv.status_code == 200)
+    #     # check we have no indicators
+    #     self.assertEqual(len(json["result"]["indicator"]), 0)
+
+    #     self.assertEqual(
+    #         len(json["result"]["vector_layers"]),
+    #         1,
+    #         msg="The module did not produce the results",
+    #     )
+
+    #     # check the content of the warning
+    #     vect = json["result"]["vector_layers"][0]
+    #     self.assertEqual(vect[-4:], ".zip")

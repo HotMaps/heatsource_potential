@@ -1,5 +1,10 @@
-FROM hotmaps/base_cm:latest
-
+FROM hotmaps/grass-py3-pdal:7.8
+MAINTAINER Pietro Zambelli <pietro.zambelli@eurac.edu>
+ENV PACKAGES="\
+    ca-certificates \
+    supervisor \
+    " \
+    GRASSBIN="grass78"
 
 # Setup app server
 WORKDIR /
@@ -7,7 +12,9 @@ RUN mkdir -p /data
 
 # Install required python modules
 COPY ./requirements.txt /cm/
-RUN pip3 install -r /cm/requirements.txt
+RUN pip3 install --upgrade pip && \
+    pip3 install --upgrade numpy scipy grass-session && \
+    pip3 install -r /cm/requirements.txt
 
 # Copy app source code
 COPY . /cm

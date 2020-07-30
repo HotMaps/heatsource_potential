@@ -1,12 +1,127 @@
 # from osgeo import gdal
+import logging
+import os
+import pathlib
+import tempfile
+import secrets
 
-# from ..helper import generate_output_file_tif, create_zip_shapefiles
+import requests
+
+from ..helper import create_zip_shapefiles, generate_output_file_shp
 from ..constant import CM_NAME
 
-# from .heatsrc import technical as tech
-# import time
+from urllib.request import Request, urlopen
 
-""" Entry point of the calculation module function"""
+import pandas as pd
+
+from .heatsrc import technical as tech
+from grass_session import TmpSession
+
+# set a logger
+LOG_FORMAT = (
+    "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
+    "-35s %(lineno) -5d: %(message)s"
+)
+logging.basicConfig(format=LOG_FORMAT)
+LOGGER = logging.getLogger(__name__)
+
+WWTP = "WWTP"
+CLC = "clc2018"
+URB = "urbanareas"
+
+BASEURL = "https://gitlab.com/hotmaps/potential/" "{repo}/-/raw/master/data/{filename}"
+
+PARAMS = (("inline", "false"),)
+
+
+COOKIES = {
+    "__cfduid": "dbd0d275a4b34a54d96de0a86eb0c852a1593641560",
+    "sidebar_collapsed": "false",
+    "event_filter": "all",
+    "_gitlab_session": "153f4bba604b81dd52df575e869a2969",
+    "cf_clearance": "3399cada8eccda468f49a61ba8fa59a0f900bd6d-1596033647-0-1z93698c68z875df92cz197f3d1c-150",
+    "known_sign_in": "aUp4SXNyVy9iZHZkU2MvRUdiUWhsditwcFRGSUFONWhpb1RkWFBtMmVlenJmM3V3Zm5vWWJCR1ROdG1BQVNYQmVzTVpDajdQRHJ6YllDaVBPL2tLRSt5MEFWUUFaU216M2lTRzg5QVJVeDlpODF0QitXNXRYSkh0eldFZ1AzelQtLUQ1Z0FLbnZXbkthNzVxMlF3STVjMWc9PQ%3D%3D--681814bf3633a4a9c26b71bedeb2e08bb62472a2",
+}
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "it,en-US;q=0.7,en;q=0.3",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "TE": "Trailers",
+}
+
+URLS = {
+    WWTP: dict(
+        repo="WWTP",
+        filename="WWTP_2015.csv",
+        url=(
+            "https://gitlab.com/hotmaps/potential/"
+            "{repo}/-/raw/master/data/2015/{filename}"
+        ),
+        params=PARAMS,
+        headers=HEADERS,
+    ),
+    WWTP
+    + "csvt": dict(
+        repo="WWTP",
+        filename="WWTP_2015.csvt",
+        url=(
+            "https://gitlab.com/hotmaps/potential/"
+            "{repo}/-/raw/master/data/2015/{filename}"
+        ),
+        params=PARAMS,
+        headers=HEADERS,
+    ),
+    WWTP
+    + "prj": dict(
+        repo="WWTP",
+        filename="WWTP_2015.prj",
+        url=(
+            "https://gitlab.com/hotmaps/potential/"
+            "{repo}/-/raw/master/data/2015/{filename}"
+        ),
+        params=PARAMS,
+        headers=HEADERS,
+    ),
+    CLC: dict(
+        repo="corine_land_cover",
+        filename="clc2018.tif",
+        url="https://gitlab.com/hotmaps/corine_land_cover/-/raw/master/data/clc2018.tif",
+        params=PARAMS,
+        cookies=COOKIES,
+        headers=HEADERS,
+    ),
+}
+
+
+def read_csv(csvpath):
+    try:
+        return pd.read_csv(csvpath, header=0, index_col=0)
+    except Exception as exc:
+        LOGGER.exception(f"Failed to read: {csvpath} >> " f"exception = {exc}")
+        raise exc
+
+
+def get_data(repo, filename, url=BASEURL, **kwargs):
+    """Retrieve/read agricultural residues data"""
+    # TODO: once the dataset is integrated remove this function
+    # check if the file exists and in case download
+    filepath = pathlib.Path(tempfile.gettempdir(), filename)
+    if not filepath.exists():
+        url = url.format(repo=repo, filename=filename)
+        print(url)
+        with requests.get(url, stream=True, **kwargs) as response:
+            response.raise_for_status()
+
+            with open(filepath, mode="wb") as cfile:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        cfile.write(chunk)
+    return filepath
+
 
 # TODO: CM provider must "change this code"
 # TODO: CM provider must "not change input_raster_selection,output_raster  1 raster input => 1 raster output"
@@ -19,6 +134,11 @@ def calculation(
     inputs_parameter_selection,
 ):
     params = inputs_parameter_selection
+
+    # initialize the CM result
+    result = dict()
+    result["name"] = CM_NAME
+
     # validate the input parameters
     warnings = []
     # check if the max within distance is < of max near distance or raise an issue
@@ -36,89 +156,84 @@ def calculation(
             }
         )
 
-    # TODO: check if the grass location has been already created
-    # if is missing, then:
-    # 1. download the CLC data,
-    # 2. create a GRASS GIS location,
-    # 3. import the data into PERMANENT
-    # 4. create the urban areas map
+        result["indicator"] = warnings
+        result["graphics"] = []
+        result["vector_layers"] = []
+        result["raster_layers"] = []
+        print("result", result)
+        return result
 
-    # TODO: do the computation
-    # tech.tech_potential(
-    #     wwtp_plants: str,
-    #     urban_areas: str,
-    #     dist_min: int = 150,
-    #     dist_max: int = 1000,
-    #     capacity_col: str = "capacity",
-    #     power_col: str = "power",
-    #     suitability_col: str = "suitability",
-    #     dist_col: str = "distance_label",
-    #     plansize_col: str = "plantsize_label",
-    #     conditional_col: str = "conditional",
-    #     suitable_col: str = "suitable",
-    #     overwrite: bool = False,
-    # )
+    # get or download the missing datasets
+    wwtp = get_data(**URLS[WWTP])
+    wwtpcsvt = get_data(**URLS[WWTP + "csvt"])
+    wwtpprj = get_data(**URLS[WWTP + "prj"])
+    clc = get_data(**URLS[CLC])
 
-    # # generate the output raster file
-    # output_raster1 = generate_output_file_tif(output_directory)
+    # define the path to the default GRASS GIS working directory
+    gisdb = pathlib.Path(tempfile.gettempdir(), "gisdb")
+    location = "wwtp"
 
-    # #retrieve the inputs layes
-    # input_raster_selection =  inputs_raster_selection["heat"]
+    overwrite = False
+    rasters = {CLC: clc}
+    vectors = {}  # {WWTP: wwtp}
+    actions = [(tech.clc2urban, (CLC, URB, [111, 112, 121], overwrite))]
 
-    # #retrieve the inputs layes
-    # input_vector_selection =  inputs_vector_selection["heating_technologies_eu28"]
+    if not gisdb.exists():
+        # the directory do not exists and need to be created
+        tech.create_location(
+            gisdb,
+            location,
+            overwrite=overwrite,
+            rasters=rasters,
+            vectors=vectors,
+            actions=actions,
+        )
 
-    # #retrieve the inputs all input defined in the signature
-    # factor =  float(inputs_parameter_selection["multiplication_factor"])
+    # generate the output raster file
+    wwtp_out = generate_output_file_shp(output_directory)
 
-    # # TODO this part bellow must be change by the CM provider
-    # ds = gdal.Open(input_raster_selection)
-    # ds_band = ds.GetRasterBand(1)
+    # create a new temporary mapset for computation and importing the wwtp points
+    with TmpSession(
+        gisdb=os.fspath(gisdb),
+        location=location,
+        mapset=f"mset_{secrets.token_urlsafe(8)}",
+        create_opts="",
+    ) as tmp:
+        tech.run_command(
+            "v.import", input=os.fspath(wwtp), output=WWTP, overwrite=overwrite
+        )
+        # compute the tech potential
+        try:
+            tech.tech_potential(
+                wwtp_plants=WWTP,
+                urban_areas=URB,
+                dist_min=params["within_dist"],
+                dist_max=params["near_dist"],
+                capacity_col="capacity",
+                power_col="power",
+                suitability_col="suitability",
+                dist_col="distance_label",
+                plansize_col="plantsize_label",
+                conditional_col="conditional",
+                suitable_col="suitable",
+                overwrite=overwrite,
+            )
+        except Exception as exc:
+            print(f"Issue in mapset: {tmp._kwopen['mapset']}")
+            raise exc
 
-    # #----------------------------------------------------
-    # pixel_values = ds.ReadAsArray()
-    # #----------Reduction factor----------------
+        # TODO: extract indicators
+        # export result
+        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out)
+        wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
 
-    # pixel_values_modified = pixel_values* float(factor)
-    # hdm_sum  = float(pixel_values_modified.sum())/1000
-
-    # gtiff_driver = gdal.GetDriverByName('GTiff')
-    # #print ()
-    # out_ds = gtiff_driver.Create(output_raster1, ds_band.XSize, ds_band.YSize, 1, gdal.GDT_UInt16, ['compress=DEFLATE',
-    #                                                                                                      'TILED=YES',
-    #                                                                                                      'TFW=YES',
-    #                                                                                                      'ZLEVEL=9',
-    #                                                                                                      'PREDICTOR=1'])
-    # out_ds.SetProjection(ds.GetProjection())
-    # out_ds.SetGeoTransform(ds.GetGeoTransform())
-
-    # ct = gdal.ColorTable()
-    # ct.SetColorEntry(0, (0,0,0,255))
-    # ct.SetColorEntry(1, (110,220,110,255))
-    # out_ds.GetRasterBand(1).SetColorTable(ct)
-
-    # out_ds_band = out_ds.GetRasterBand(1)
-    # out_ds_band.SetNoDataValue(0)
-    # out_ds_band.WriteArray(pixel_values_modified)
-
-    # del out_ds
-    # output geneneration of the output
-
-    # TODO to create zip from shapefile use create_zip_shapefiles from the helper before sending result
-    # TODO exemple  output_shpapefile_zipped = create_zip_shapefiles(output_directory, output_shpapefile)
     result = dict()
     result["name"] = CM_NAME
     result["indicator"] = warnings
     result["graphics"] = []
-    result["vector_layers"] = []
+    result["vector_layers"] = [
+        wwtp_zip,
+    ]
     result["raster_layers"] = []
     print("result", result)
     return result
-
-
-def colorizeMyOutputRaster(out_ds):
-    ct = gdal.ColorTable()
-    ct.SetColorEntry(0, (0, 0, 0, 255))
-    ct.SetColorEntry(1, (110, 220, 110, 255))
-    out_ds.SetColorTable(ct)
-    return out_ds

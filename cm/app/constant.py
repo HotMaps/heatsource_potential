@@ -28,7 +28,7 @@ INPUTS_CALCULATION_MODULE = [
         "input_parameter_name": "within_dist",
         "input_value": "150",
         "input_priority": 0,
-        "input_unit": "none",
+        "input_unit": "m",
         "input_min": 50,
         "input_max": 2000,
         "cm_id": CM_ID,  # Do no change this value
@@ -39,7 +39,7 @@ INPUTS_CALCULATION_MODULE = [
         "input_parameter_name": "near_dist",
         "input_value": "1000",
         "input_priority": 0,
-        "input_unit": "none",
+        "input_unit": "m",
         "input_min": 200,
         "input_max": 10000,
         "cm_id": CM_ID,  # Do no change this value
@@ -56,15 +56,14 @@ SIGNATURE = {
         # "urban areas" or "corine land cover",
     ],
     "type_layer_needed": [],
-    "vectors_needed": [
-        # TODO: uncomment the line below when the layer is integrated
-        # >>>>>
-        "wwtp",
-        # <<<<<
+    "vectors_needed": [],
+    # vector layers should be added here
+    "type_vectors_needed": [
+        #"wwtp",
     ],
     "cm_url": "Do not add something",
-    "cm_description": "this computation module allows to divide the HDM",
+    "cm_description": "This computation module calculates the potential of waste water treatment plants that can be utilized in the selected area",
     "cm_id": CM_ID,
-    "wiki_url": WIKIURL + "CM-Heatsource-potential",
+    "wiki_url": WIKIURL + "CM-Heat-source-potential",
     "inputs_calculation_module": INPUTS_CALCULATION_MODULE,
 }

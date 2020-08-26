@@ -230,7 +230,7 @@ def calculation(
         print(f"=> Other user already compute the heatsource potential using: {within_dist} and {near_dist} m.")
         print(f"=> Generate a new zip file from cache: {wwtp_outcache} -> {wwtp_zip}...")
         # copy the output that has been already computed to the output directory
-        gen_zip(wwtp_outcache, wwtp_uuid, wwtp_out_path.parent)
+        gen_zip(wwtp_outcache.as_posix(), wwtp_uuid, wwtp_out_path.parent)
     else:
         os.makedirs(dcache)
         print(f"\n\n=> First time a user compute the heatsource potential using: {within_dist} and {near_dist} m.")

@@ -112,7 +112,7 @@ def get_data(repo, filename, url=BASEURL, **kwargs):
     filepath = pathlib.Path(tempfile.gettempdir(), filename)
     if not filepath.exists():
         url = url.format(repo=repo, filename=filename)
-        print(url)
+        print(f"Download {filepath} from: {url}")
         with requests.get(url, stream=True, **kwargs) as response:
             response.raise_for_status()
 

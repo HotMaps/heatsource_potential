@@ -8,6 +8,7 @@ import secrets
 import requests
 
 from pprint import pprint
+from shutil import copyfile
 
 from ..helper import create_zip_shapefiles, generate_output_file_shp
 from ..constant import CM_NAME
@@ -141,15 +142,16 @@ def calculation(
 
     # validate the input parameters
     warnings = []
+    near_dist, within_dist = int(params["near_dist"]), int(params["within_dist"])
     # check if the max within distance is < of max near distance or raise an issue
-    if int(params["near_dist"]) <= int(params["within_dist"]):
+    if near_dist <= within_dist:
         warnings.append(
             {
                 "unit": "-",
                 "name": (
                     "near distance limit "
-                    f"({params['near_dist']}) <= within "
-                    f"distance limit ({params['within_dist']}),"
+                    f"({near_dist}) <= within "
+                    f"distance limit ({within_dist}),"
                     " please correct the values and try again"
                 ),
                 "value": "",
@@ -192,44 +194,59 @@ def calculation(
             actions=actions,
         )
 
-    # generate the output raster file
+    # generate the shape file
     wwtp_out = generate_output_file_shp(output_directory)
-
-    # create a new temporary mapset for computation and importing the wwtp points
-    with TmpSession(
-        gisdb=os.fspath(gisdb),
-        location=location,
-        mapset=f"mset_{secrets.token_urlsafe(8)}",
-        create_opts="",
-    ) as tmp:
-        tech.run_command(
-            "v.import", input=os.fspath(wwtp), output=WWTP, overwrite=overwrite
-        )
-        # compute the tech potential
-        try:
-            tech.tech_potential(
-                wwtp_plants=WWTP,
-                urban_areas=URB,
-                dist_min=int(params["within_dist"]),
-                dist_max=int(params["near_dist"]),
-                capacity_col="capacity",
-                power_col="power",
-                suitability_col="suitability",
-                dist_col="distance_label",
-                plansize_col="plantsize_label",
-                conditional_col="conditional",
-                suitable_col="suitable",
-                overwrite=overwrite,
+    wwtp_zip = wwtp_out[:-4] + ".zip"
+    
+    # filename and path in cache
+    fzip = f"WWTP_{within_dist}-{near_dist}.zip"
+    wwtp_zipcache = pathlib.Path(tempfile.gettempdir(), fzip)
+    if wwtp_zipcache.exists():
+        print(f"=> Other user already compute the heatsource potential using: {within_dist} and {near_dist} m.")
+        print(f"=> Copy the cache file from: {wwtp_zipcache} to {wwtp_zip}")
+        # copy the output that has been already computed to the output directory
+        copyfile(wwtp_zipcache, wwtp_zip)
+    else:
+        print(f"\n\n=> First time a user compute the heatsource potential using: {within_dist} and {near_dist} m.")
+        # create a new temporary mapset for computation and importing the wwtp points
+        with TmpSession(
+            gisdb=os.fspath(gisdb),
+            location=location,
+            mapset=f"mset_{secrets.token_urlsafe(8)}",
+            create_opts="",
+        ) as tmp:
+            tech.run_command(
+                "v.import", input=os.fspath(wwtp), output=WWTP, overwrite=overwrite
             )
-        except Exception as exc:
-            print(f"Issue in mapset: {tmp._kwopen['mapset']}")
-            raise exc
-
-        # TODO: extract indicators
-        # export result
-        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out)
-        wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
-
+            # compute the tech potential
+            try:
+                tech.tech_potential(
+                    wwtp_plants=WWTP,
+                    urban_areas=URB,
+                    dist_min=int(params["within_dist"]),
+                    dist_max=int(params["near_dist"]),
+                    capacity_col="capacity",
+                    power_col="power",
+                    suitability_col="suitability",
+                    dist_col="distance_label",
+                    plansize_col="plantsize_label",
+                    conditional_col="conditional",
+                    suitable_col="suitable",
+                    overwrite=overwrite,
+                )
+            except Exception as exc:
+                print(f"Issue in mapset: {tmp._kwopen['mapset']}")
+                raise exc
+    
+            # TODO: extract indicators
+            # export result
+            tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out)
+            wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
+            # copy the output back to the repository to have a cache
+            print(f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!")
+            print(f"=> Copy the file to cache from: {wwtp_zip} to {wwtp_zipcache}\n")
+            copyfile(wwtp_zip, wwtp_zipcache)
+            
     result = dict()
     result["name"] = CM_NAME
     result["indicator"] = warnings

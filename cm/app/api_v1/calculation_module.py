@@ -142,7 +142,7 @@ def calculation(
     # validate the input parameters
     warnings = []
     # check if the max within distance is < of max near distance or raise an issue
-    if params["near_dist"] <= params["within_dist"]:
+    if int(params["near_dist"]) <= int(params["within_dist"]):
         warnings.append(
             {
                 "unit": "-",
@@ -210,8 +210,8 @@ def calculation(
             tech.tech_potential(
                 wwtp_plants=WWTP,
                 urban_areas=URB,
-                dist_min=params["within_dist"],
-                dist_max=params["near_dist"],
+                dist_min=int(params["within_dist"]),
+                dist_max=int(params["near_dist"]),
                 capacity_col="capacity",
                 power_col="power",
                 suitability_col="suitability",

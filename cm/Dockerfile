@@ -12,9 +12,10 @@ RUN mkdir -p /data
 
 # Install required python modules
 COPY ./requirements.txt /cm/
-RUN pip3 install --upgrade pip && \
-    pip3 install --upgrade numpy scipy grass-session && \
-    pip3 install -r /cm/requirements.txt
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install --upgrade numpy scipy grass-session && \
+    python3 -m pip install -r /cm/requirements.txt && \
+    $GRASSBIN --config path
 
 # Copy app source code
 COPY . /cm

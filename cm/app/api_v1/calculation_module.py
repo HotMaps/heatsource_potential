@@ -7,10 +7,10 @@ import secrets
 
 import requests
 
+from pprint import pprint
+
 from ..helper import create_zip_shapefiles, generate_output_file_shp
 from ..constant import CM_NAME
-
-from urllib.request import Request, urlopen
 
 import pandas as pd
 
@@ -163,6 +163,9 @@ def calculation(
         print("result", result)
         return result
 
+    pprint(inputs_raster_selection)
+    pprint(inputs_vector_selection)
+    pprint(inputs_parameter_selection)
     # get or download the missing datasets
     wwtp = get_data(**URLS[WWTP])
     wwtpcsvt = get_data(**URLS[WWTP + "csvt"])

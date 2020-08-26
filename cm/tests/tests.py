@@ -71,8 +71,8 @@ class TestAPI(unittest.TestCase):
         inputs_raster_selection = {}
         inputs_parameter_selection = {}
         inputs_vector_selection = {}
-        inputs_parameter_selection["within_dist"] = 150  # m
-        inputs_parameter_selection["near_dist"] = 1000  # m
+        inputs_parameter_selection["within_dist"] = "150"  # m
+        inputs_parameter_selection["near_dist"] = "1000"   # m
 
         # register the calculation module a
         payload = {

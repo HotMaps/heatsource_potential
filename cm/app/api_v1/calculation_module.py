@@ -9,6 +9,7 @@ import requests
 
 from pprint import pprint
 from shutil import copyfile
+from zipfile import ZipFile
 
 from ..helper import create_zip_shapefiles, generate_output_file_shp
 from ..constant import CM_NAME
@@ -124,6 +125,27 @@ def get_data(repo, filename, url=BASEURL, **kwargs):
     return filepath
 
 
+def gen_zip(shpfile, fname, odir):
+    print ("shafefile", shpfile)
+    odir = pathlib.Path(odir)
+    shppath = shpfile[:-4]
+    # copy all file in the output directory
+    for ext in (".shp", ".dbf", ".prj", ".shx"):
+        copyfile(shppath+ext, odir / (fname + ext))
+        
+    os.chdir(odir)
+    # determine file name
+    import sys
+    #modify the coding in fly for writing
+    sys.getfilesystemencoding = lambda: 'UTF-8'
+
+    zip_file = odir / (fname + ".zip")
+    with ZipFile(zip_file, 'w') as zf:
+        for ext in (".shp", ".dbf", ".prj", ".shx"):
+            zf.write(fname + ext)
+        return zip_file
+
+
 # TODO: CM provider must "change this code"
 # TODO: CM provider must "not change input_raster_selection,output_raster  1 raster input => 1 raster output"
 # TODO: CM provider can "add all the parameters he needs to run his CM
@@ -196,17 +218,21 @@ def calculation(
 
     # generate the shape file
     wwtp_out = generate_output_file_shp(output_directory)
+    wwtp_out_path = pathlib.Path(wwtp_out)
+    wwtp_uuid = wwtp_out_path.name[:-4]
     wwtp_zip = wwtp_out[:-4] + ".zip"
     
     # filename and path in cache
-    fzip = f"WWTP_{within_dist}-{near_dist}.zip"
-    wwtp_zipcache = pathlib.Path(tempfile.gettempdir(), fzip)
-    if wwtp_zipcache.exists():
+    dcache_name = f"WWTP_{within_dist}-{near_dist}"
+    dcache = pathlib.Path(tempfile.gettempdir(), dcache_name)
+    wwtp_outcache = dcache / (dcache_name + ".shp")
+    if dcache.exists() and wwtp_outcache.exists():
         print(f"=> Other user already compute the heatsource potential using: {within_dist} and {near_dist} m.")
-        print(f"=> Copy the cache file from: {wwtp_zipcache} to {wwtp_zip}")
+        print(f"=> Generate a new zip file from cache: {wwtp_outcache} -> {wwtp_zip}...")
         # copy the output that has been already computed to the output directory
-        copyfile(wwtp_zipcache, wwtp_zip)
+        gen_zip(wwtp_outcache, wwtp_uuid, wwtp_out_path.parent)
     else:
+        os.makedirs(dcache)
         print(f"\n\n=> First time a user compute the heatsource potential using: {within_dist} and {near_dist} m.")
         # create a new temporary mapset for computation and importing the wwtp points
         with TmpSession(
@@ -240,12 +266,11 @@ def calculation(
     
             # TODO: extract indicators
             # export result
-            tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out)
-            wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
+            tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_outcache.as_posix())
             # copy the output back to the repository to have a cache
             print(f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!")
-            print(f"=> Copy the file to cache from: {wwtp_zip} to {wwtp_zipcache}\n")
-            copyfile(wwtp_zip, wwtp_zipcache)
+            print(f"=> Generate a new zip file from cache: {wwtp_outcache} -> {wwtp_zip}...")
+            gen_zip(wwtp_outcache.as_posix(), wwtp_uuid, wwtp_out_path.parent)
             
     result = dict()
     result["name"] = CM_NAME

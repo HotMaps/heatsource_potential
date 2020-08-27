@@ -94,5 +94,5 @@ class TestAPI(unittest.TestCase):
         )
 
         # check the content of the warning
-        vect = json["result"]["vector_layers"][0]
+        vect = json["result"]["vector_layers"][0]["path"]
         self.assertEqual(vect[-4:], ".zip")

@@ -188,8 +188,12 @@ def calculation(
         print("result", result)
         return result
 
+    print("=" * 50)
+    print("=> inputs_raster_selection")
     pprint(inputs_raster_selection)
+    print("=> inputs_vector_selection")
     pprint(inputs_vector_selection)
+    print("=> inputs_parameter_selection")
     pprint(inputs_parameter_selection)
     # get or download the missing datasets
     wwtp = get_data(**URLS[WWTP])

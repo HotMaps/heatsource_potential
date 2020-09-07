@@ -2,22 +2,20 @@
 import logging
 import os
 import pathlib
-import tempfile
 import secrets
-
-import requests
-
+import subprocess as sub
+import tempfile
 from pprint import pprint
 from shutil import copyfile
 from zipfile import ZipFile
 
-from ..helper import create_zip_shapefiles, generate_output_file_shp
-from ..constant import CM_NAME
-
 import pandas as pd
-
-from .heatsrc import technical as tech
+import requests
 from grass_session import TmpSession
+
+from ..constant import CM_NAME
+from ..helper import create_zip_shapefiles, generate_output_file_shp
+from .heatsrc import technical as tech
 
 # set a logger
 LOG_FORMAT = (
@@ -193,6 +191,18 @@ def calculation(
     pprint(inputs_raster_selection)
     print("=> inputs_vector_selection")
     pprint(inputs_vector_selection)
+    # {'wwtp_capacity': '/var/tmp/e36e76f0b70b4b2e8fe974c593ebac93.csv'}
+    try:
+        cpth = inputs_vector_selection["wwtp_capacity"]
+        proc = sub.Popen(f"head {cpth}", shell=True, stdout=sub.PIPE, stderr=sub.PIPE)
+        so, se = proc.communicate()
+        print(so.decode())
+        print("---")
+        print(se.decode())
+        print("---")
+    except Exception:
+        print("Not able to reat the wwtp_capacity csv file")
+
     print("=> inputs_parameter_selection")
     pprint(inputs_parameter_selection)
     # get or download the missing datasets
@@ -292,11 +302,7 @@ def calculation(
     result["indicator"] = warnings
     result["graphics"] = []
     result["vector_layers"] = [
-        {
-            "name": "Heatsource potential",
-            "path": wwtp_zip,
-            "type": "wwtp_power",
-        },
+        {"name": "Heatsource potential", "path": wwtp_zip, "type": "wwtp_power",},
     ]
     result["raster_layers"] = []
     print("result", result)

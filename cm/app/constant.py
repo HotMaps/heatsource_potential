@@ -59,7 +59,8 @@ SIGNATURE = {
     "vectors_needed": [],
     # vector layers should be added here
     "type_vectors_needed": [
-        {"type": "wwtp_capacity", "description": "You can choose the layer of type 'wwtp'."}
+        {"type": "wwtp_capacity", "description": "Heatsource capacity"},
+        {"type": "wwtp_power", "description": "Heatsource power"},
     ],
     "cm_url": "Do not add something",
     "cm_description": "This computation module calculates the potential of waste water treatment plants that can be utilized in the selected area",

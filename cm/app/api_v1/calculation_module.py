@@ -1,4 +1,5 @@
 # from osgeo import gdal
+import io
 import logging
 import os
 import pathlib
@@ -26,6 +27,8 @@ logging.basicConfig(format=LOG_FORMAT)
 LOGGER = logging.getLogger(__name__)
 
 WWTP = "WWTP"
+WWTP_C = WWTP + "_capacity"
+WWTP_P = WWTP + "_power"
 CLC = "clc2018"
 URB = "urbanareas"
 
@@ -123,6 +126,36 @@ def get_data(repo, filename, url=BASEURL, **kwargs):
     return filepath
 
 
+def extract_inidicators(wwtp_plants, indicators=None):
+    indicators = indicators if indicators else []
+    # verify result (here abbreviated)
+    proc = tech.run_command(
+        "v.db.select",
+        map=wwtp_plants,
+        stdout_=sub.PIPE,
+        separator="pipe",
+        vertical_separator="newline",
+    )
+
+    stdout = proc.outputs["stdout"].value
+    # "indicators": [
+    #     {"unit": "MWh","name": "Heat demand indicator with a factor divided by 2","value": 281244.5},
+    # ],
+    if stdout:
+        res = pd.read_csv(io.StringIO(stdout), sep="|", header=0)
+        for suit in res["suitability"].drop_duplicates():
+            idx = res["suitability"] == suit
+            pwr = res.loc[idx, "power"]
+            indicators.append(
+                dict(
+                    unit="kW",
+                    name=f"{idx.sum()} heatsources classified as {suit}, total power",
+                    value=f"{pwr.sum()}",
+                )
+            )
+    return indicators
+
+
 def gen_zip(shpfile, fname, odir):
     print("shafefile", shpfile)
     odir = pathlib.Path(odir)
@@ -206,10 +239,33 @@ def calculation(
     print("=> inputs_parameter_selection")
     pprint(inputs_parameter_selection)
     # get or download the missing datasets
-    wwtp = get_data(**URLS[WWTP])
-    wwtpcsvt = get_data(**URLS[WWTP + "csvt"])
-    wwtpprj = get_data(**URLS[WWTP + "prj"])
+    wwtp_c = inputs_vector_selection["wwtp_capacity"]
+    wwtp_p = inputs_vector_selection["wwtp_power"]
+
+    # download data from the repository
+    # wwtprepo = get_data(**URLS[WWTP])
+    wwtprepocsvt = get_data(**URLS[WWTP + "csvt"])
+    wwtprepoprj = get_data(**URLS[WWTP + "prj"])
     clc = get_data(**URLS[CLC])
+
+    # create the csvt and prj file to the input file provided by the platform
+    # these files are requide to properly import the CSV considering the
+    # common type and the Geographical coordination system
+    # capacity
+    wwpth_c = pathlib.Path(wwtp_c)
+    wwfld_c = wwpth_c.parent
+    wwnam_c = wwpth_c.name
+
+    copyfile(wwtprepocsvt, wwfld_c / (wwnam_c[:-4] + ".csvt"))
+    copyfile(wwtprepoprj, wwfld_c / (wwnam_c[:-4] + ".prj"))
+
+    # power
+    wwpth_p = pathlib.Path(wwtp_p)
+    wwfld_p = wwpth_p.parent
+    wwnam_p = wwpth_p.name
+
+    copyfile(wwtprepocsvt, wwfld_p / (wwnam_p[:-4] + ".csvt"))
+    copyfile(wwtprepoprj, wwfld_p / (wwnam_p[:-4] + ".prj"))
 
     # define the path to the default GRASS GIS working directory
     gisdb = pathlib.Path(tempfile.gettempdir(), "gisdb")
@@ -233,76 +289,75 @@ def calculation(
 
     # generate the shape file
     wwtp_out = generate_output_file_shp(output_directory)
-    wwtp_out_path = pathlib.Path(wwtp_out)
-    wwtp_uuid = wwtp_out_path.name[:-4]
-    wwtp_zip = wwtp_out[:-4] + ".zip"
 
-    # filename and path in cache
-    dcache_name = f"WWTP_{within_dist}-{near_dist}"
-    dcache = pathlib.Path(tempfile.gettempdir(), dcache_name)
-    wwtp_outcache = dcache / (dcache_name + ".shp")
-    if dcache.exists() and wwtp_outcache.exists():
-        print(
-            f"=> Other user already compute the heatsource potential using: {within_dist} and {near_dist} m."
+    # create a new temporary mapset for computation and importing the wwtp points
+    with TmpSession(
+        gisdb=os.fspath(gisdb),
+        location=location,
+        mapset=f"mset_{secrets.token_urlsafe(8)}",
+        create_opts="",
+    ) as tmp:
+        # import user inputs
+        tech.run_command(
+            "v.import", input=os.fspath(wwtp_c), output=WWTP_C, overwrite=overwrite
         )
-        print(
-            f"=> Generate a new zip file from cache: {wwtp_outcache} -> {wwtp_zip}..."
+        tech.run_command(
+            "v.import", input=os.fspath(wwtp_p), output=WWTP_P, overwrite=overwrite
         )
-        # copy the output that has been already computed to the output directory
-        gen_zip(wwtp_outcache.as_posix(), wwtp_uuid, wwtp_out_path.parent)
-    else:
-        os.makedirs(dcache)
-        print(
-            f"\n\n=> First time a user compute the heatsource potential using: {within_dist} and {near_dist} m."
+        # create a copy
+        tech.run_command("g.copy", vector=(WWTP_C, WWTP), overwrite=overwrite)
+        # join the table
+        tech.run_command(
+            "v.db.join",
+            map=WWTP,
+            column="gid",
+            other_table=WWTP_P,
+            other_column="gid",
+            subset_columns="power",
         )
-        # create a new temporary mapset for computation and importing the wwtp points
-        with TmpSession(
-            gisdb=os.fspath(gisdb),
-            location=location,
-            mapset=f"mset_{secrets.token_urlsafe(8)}",
-            create_opts="",
-        ) as tmp:
-            tech.run_command(
-                "v.import", input=os.fspath(wwtp), output=WWTP, overwrite=overwrite
-            )
-            # compute the tech potential
-            try:
-                tech.tech_potential(
-                    wwtp_plants=WWTP,
-                    urban_areas=URB,
-                    dist_min=int(params["within_dist"]),
-                    dist_max=int(params["near_dist"]),
-                    capacity_col="capacity",
-                    power_col="power",
-                    suitability_col="suitability",
-                    dist_col="distance_label",
-                    plansize_col="plantsize_label",
-                    conditional_col="conditional",
-                    suitable_col="suitable",
-                    overwrite=overwrite,
-                )
-            except Exception as exc:
-                print(f"Issue in mapset: {tmp._kwopen['mapset']}")
-                raise exc
 
-            # TODO: extract indicators
-            # export result
-            tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_outcache.as_posix())
-            # copy the output back to the repository to have a cache
-            print(
-                f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
+        # compute the tech potential
+        try:
+            tech.tech_potential(
+                wwtp_plants=WWTP,
+                urban_areas=URB,
+                dist_min=int(params["within_dist"]),
+                dist_max=int(params["near_dist"]),
+                capacity_col="capacity",
+                power_col="power",
+                suitability_col="suitability",
+                dist_col="distance_label",
+                plansize_col="plantsize_label",
+                conditional_col="conditional",
+                suitable_col="suitable",
+                overwrite=overwrite,
             )
-            print(
-                f"=> Generate a new zip file from cache: {wwtp_outcache} -> {wwtp_zip}..."
-            )
-            gen_zip(wwtp_outcache.as_posix(), wwtp_uuid, wwtp_out_path.parent)
+        except Exception as exc:
+            print(f"Issue in mapset: {tmp._kwopen['mapset']}")
+            raise exc
+
+        # extract indicators
+        indicators = extract_inidicators(WWTP, warnings)
+
+        # export result
+        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out)
+        # copy the output back to the repository to have a cache
+        print(
+            f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
+        )
+        wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
+        print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
 
     result = dict()
     result["name"] = CM_NAME
-    result["indicator"] = warnings
+    result["indicator"] = indicators
     result["graphics"] = []
     result["vector_layers"] = [
-        {"name": "Heatsource potential", "path": wwtp_zip, "type": "wwtp_power",},
+        {
+            "name": "Heatsource potential",
+            "path": os.path.join(output_directory, wwtp_zip),
+            "type": "wwtp_power",
+        },
     ]
     result["raster_layers"] = []
     print("result", result)

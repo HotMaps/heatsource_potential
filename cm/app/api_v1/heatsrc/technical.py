@@ -59,6 +59,7 @@ def run_command(*args, **kwargs):
     mod = Module(*args, **kwargs)
     print(f"\n» Execute: `{' '.join(mod.make_cmd())}`")
     mod.run()
+    return mod
 
 
 def load_rasters(rasters: Dict[str, str], overwrite: bool = False):
@@ -186,7 +187,8 @@ def tech_potential(
     overwrite: bool = False,
 ):
     # set computational region to the raster used as input
-    run_command("g.region", raster=urban_areas, flags="p")
+    run_command("g.region", align=urban_areas, vector=wwtp_plants, flags="p")
+    run_command("g.region", grow=100, flags="p")
     # create pid for tmp files
     for distance in (dist_min, dist_max):
         print(f"\n\n» Compute buffer around WWTP of {distance}")

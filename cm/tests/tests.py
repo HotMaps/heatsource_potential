@@ -1,5 +1,6 @@
 import os
 import tempfile
+import pathlib
 import unittest
 
 # from pprint import pprint
@@ -10,6 +11,9 @@ from shutil import copyfile
 from .test_client import TestClient
 from app.constant import INPUTS_CALCULATION_MODULE
 
+DATADIR = pathlib.Path(__file__).parent / "data"
+TESTDATAC = (DATADIR / "sample_data_c.csv").as_posix()
+TESTDATAP = (DATADIR / "sample_data_p.csv").as_posix()
 
 # Add this check to be able to execute and debug code locally with:
 # LOCAL=true python3 test.py
@@ -41,7 +45,10 @@ class TestAPI(unittest.TestCase):
     def test_params_check(self):
         inputs_raster_selection = {}
         inputs_parameter_selection = {}
-        inputs_vector_selection = {}
+        inputs_vector_selection = {
+            "wwtp_capacity": TESTDATAC,
+            "wwtp_power": TESTDATAP,
+        }
         inputs_parameter_selection["within_dist"] = 1000  # m
         inputs_parameter_selection["near_dist"] = 100  # m
 
@@ -70,9 +77,12 @@ class TestAPI(unittest.TestCase):
     def test_computation(self):
         inputs_raster_selection = {}
         inputs_parameter_selection = {}
-        inputs_vector_selection = {}
+        inputs_vector_selection = {
+            "wwtp_capacity": TESTDATAC,
+            "wwtp_power": TESTDATAP,
+        }
         inputs_parameter_selection["within_dist"] = "150"  # m
-        inputs_parameter_selection["near_dist"] = "1000"   # m
+        inputs_parameter_selection["near_dist"] = "1000"  # m
 
         # register the calculation module a
         payload = {
@@ -85,7 +95,7 @@ class TestAPI(unittest.TestCase):
 
         self.assertTrue(rv.status_code == 200)
         # check we have no indicators
-        self.assertEqual(len(json["result"]["indicator"]), 0)
+        self.assertGreater(len(json["result"]["indicator"]), 0)
 
         self.assertEqual(
             len(json["result"]["vector_layers"]),

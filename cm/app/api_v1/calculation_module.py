@@ -144,15 +144,16 @@ def extract_inidicators(wwtp_plants, indicators=None):
     if stdout:
         res = pd.read_csv(io.StringIO(stdout), sep="|", header=0)
         for suit in res["suitability"].drop_duplicates():
-            idx = res["suitability"] == suit
-            pwr = res.loc[idx, "power"]
-            indicators.append(
-                dict(
-                    unit="kW",
-                    name=f"{idx.sum()} heatsources classified as {suit}, total power",
-                    value=f"{pwr.sum()}",
+            if str(suit).lower() != "nan":
+                idx = res["suitability"] == suit
+                pwr = res.loc[idx, "power"]
+                indicators.append(
+                    dict(
+                        unit="kW",
+                        name=f"{idx.sum()} heatsources classified as {suit}, total power",
+                        value=f"{pwr.sum()}",
+                    )
                 )
-            )
     return indicators
 
 

@@ -8,7 +8,7 @@ import subprocess as sub
 import tempfile
 from pprint import pprint
 from shutil import copyfile
-from zipfile import ZipFile, is_zipfile
+from zipfile import ZipFile
 
 import pandas as pd
 import requests
@@ -351,14 +351,7 @@ def calculation(
 
     result = dict()
     result["name"] = CM_NAME
-    if is_zipfile(wwtp_zip):
-        valid = "valid zip file"
-    else:
-        valid = "zip file not valid"
-    result["indicator"] = indicators + [{"unit": "-", "name": "wwtp_zip: " + valid, "value": 0.0}]
-    
-
-                  
+    result["indicator"] = indicators
     result["graphics"] = []
     result["vector_layers"] = [
         {

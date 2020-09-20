@@ -351,7 +351,11 @@ def calculation(
 
     result = dict()
     result["name"] = CM_NAME
-    result["indicator"] = indicators + [{"unit": "-", "name": "wwtp_out: " + wwtp_out, "value": 0.0}, {"unit": "-", "name": "wwtp_zip" +wwtp_out, "value": 0.0}]
+    if zipfile.is_zipfile(wwtp_zip):
+        valid = "valid zip file"
+    else:
+        valid = "zip file not valid"
+    result["indicator"] = indicators + [{"unit": "-", "name": "wwtp_zip: " + valid, "value": 0.0}]
     
 
                   

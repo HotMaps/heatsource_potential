@@ -351,13 +351,16 @@ def calculation(
 
     result = dict()
     result["name"] = CM_NAME
-    result["indicator"] = indicators
+    result["indicator"] = indicators + [{"unit": "-", "name": "wwtp_out: " + wwtp_out, "value": 0.0}, {"unit": "-", "name": "wwtp_zip" +wwtp_out, "value": 0.0}]
+    
+
+                  
     result["graphics"] = []
     result["vector_layers"] = [
         {
             "name": "Heatsource potential",
             "path": wwtp_zip, # os.path.join(output_directory, wwtp_zip),
-            "type": "wwtp_power",
+            #"type": "wwtp_power",
         },
     ]
     result["raster_layers"] = []

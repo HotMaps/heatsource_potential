@@ -8,7 +8,7 @@ import subprocess as sub
 import tempfile
 from pprint import pprint
 from shutil import copyfile
-from zipfile import ZipFile
+from zipfile import ZipFile, is_zipfile
 
 import pandas as pd
 import requests
@@ -351,7 +351,7 @@ def calculation(
 
     result = dict()
     result["name"] = CM_NAME
-    if zipfile.is_zipfile(wwtp_zip):
+    if is_zipfile(wwtp_zip):
         valid = "valid zip file"
     else:
         valid = "zip file not valid"

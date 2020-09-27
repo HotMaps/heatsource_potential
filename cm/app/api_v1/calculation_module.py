@@ -341,7 +341,7 @@ def calculation(
         indicators = extract_inidicators(WWTP, warnings)
 
         # export result
-        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out)
+        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=1.0)
         # copy the output back to the repository to have a cache
         print(
             f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
@@ -356,8 +356,34 @@ def calculation(
     result["vector_layers"] = [
         {
             "name": "Heatsource potential",
-            "path": wwtp_zip, # os.path.join(output_directory, wwtp_zip),
-            #"type": "wwtp_power",
+            "path": wwtp_zip,  # os.path.join(output_directory, wwtp_zip),
+            "type": "custom",
+            "symbology": [
+                {
+                    "red": 24,
+                    "green": 139,
+                    "blue": 125,
+                    "opacity": 0.8,
+                    "value": "Suitable",
+                    "label": "Suitable",
+                },
+                {
+                    "red": 217,
+                    "green": 194,
+                    "blue": 89,
+                    "opacity": 0.8,
+                    "value": "Conditionally",
+                    "label": "Conditionally",
+                },
+                {
+                    "red": 243,
+                    "green": 70,
+                    "blue": 22,
+                    "opacity": 0.8,
+                    "value": "Not suitable",
+                    "label": "Not suitable",
+                },
+            ],
         },
     ]
     result["raster_layers"] = []

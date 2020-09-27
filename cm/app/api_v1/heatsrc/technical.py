@@ -46,6 +46,8 @@ SUSTAINABILITY = pd.DataFrame(
     columns=["Within", "Near", "Far"],
 )
 
+COLORS = {"Suitable": "#188B7D", "Conditionally": "#D9C259", "Not suitable": "#F34616"}
+
 
 ## DATA NAMES
 CLC = "clc"
@@ -207,6 +209,10 @@ def tech_potential(
         (f"{plansize_col}", "varchar(16)"),
         (f"{conditional_col}", "DOUBLE PRECISION"),
         (f"{suitable_col}", "DOUBLE PRECISION"),
+        # add columns for output rendering
+        ("color", "varchar(16)"),
+        ("fillColor", "varchar(16)"),
+        ("opacity", "DOUBLE PRECISION"),
     ]
 
     run_command(
@@ -219,7 +225,7 @@ def tech_potential(
     run_command("db.describe", flags="c", table=f"{wwtp_plants}__buf{dist_min}m")
     run_command("db.describe", flags="c", table=f"{wwtp_plants}__buf{dist_max}m")
 
-    print(f"\n\n» Update WWTP columns")
+    print("\n\n» Update WWTP columns")
     for (dlabel, clabel), sustain in SUSTAINABILITY.unstack().items():
         dmin, dmax = DIST_DICT[dlabel]
         cmin, cmax = PLANT_SIZE[clabel]
@@ -236,11 +242,15 @@ def tech_potential(
             f"               AND dist{dist_max:d}m_sum {dmax} ) )"
         )
 
+        clr = COLORS[sustain]
         sqlcmd = (
             f"UPDATE {wwtp_plants}\n"
             f"SET    {suitability_col}='{sustain}',\n"
             f"       {dist_col}='{dlabel}',\n"
-            f"       {plansize_col}='{clabel}'\n"
+            f"       {plansize_col}='{clabel}',\n"
+            f"       color='{clr}',\n"
+            f"       fillColor='{clr}',\n"
+            f"       opacity=0.8\n"
             f"WHERE  {where}"
         )
         run_command("db.execute", sql=sqlcmd)
@@ -289,7 +299,7 @@ def tech_stats(wwtp_plants: str, areas: str, columns: List[str]):
     pass
 
 
-def tech_export(wwtp_plants: str, wwtp_out: str):
+def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0):
     # run_command(
     #     "v.out.ogr", input=nuts3, output=nuts3_wwtp_potential, format=ESRI_Shapefile
     # )
@@ -306,9 +316,20 @@ def tech_export(wwtp_plants: str, wwtp_out: str):
                 vect.table.columns.rename(col, col[:10])
         vect.table.conn.commit()
 
+    # perform a buffer, point vector are not supported as output
+    wwtp_buf = wwtp_plants + "__buffer"
+    run_command(
+        "v.buffer", input=wwtp_plants, output=wwtp_buf, distance=buffer, flags="t"
+    )
+
+    run_command("db.describe", flags="c", table=wwtp_buf)
+
     # export
     run_command(
-        "v.out.ogr", input=wwtp_plants, output=wwtp_out, format="ESRI_Shapefile",
+        "v.out.ogr",
+        input=wwtp_buf,
+        output=wwtp_out,
+        format="ESRI_Shapefile",
     )
 
 

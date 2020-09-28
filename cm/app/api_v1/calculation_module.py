@@ -351,7 +351,7 @@ def calculation(
         print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
     
     gdf = gpd.read_file(wwtp_out)
-    cols = ""
+    cols = "columns: "
     for item in gdf.columns:
         cols += item + ", "
     shape = str(gdf.shpae)
@@ -359,8 +359,8 @@ def calculation(
     
     result = dict()
     result["name"] = CM_NAME
-    result["indicator"] = indicators + [{"unit": "GWh", "name": "columns","value": cols},
-                                  {"unit": "GWh", "name": "gdf shape","value": shape},
+    result["indicator"] = indicators + [{"unit": "GWh", "name": cols,"value": 0},
+                                  {"unit": "GWh", "name": "gdf shape: " + shape,"value": 0},
                                   ]
     result["graphics"] = []
 

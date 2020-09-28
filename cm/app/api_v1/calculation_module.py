@@ -9,6 +9,7 @@ import tempfile
 from pprint import pprint
 from shutil import copyfile
 from zipfile import ZipFile
+import geopandas as gpd
 
 import pandas as pd
 import requests
@@ -348,10 +349,19 @@ def calculation(
         )
         wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
         print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
-
+    
+    gdf = gpd.read_file(wwtp_out)
+    cols = ""
+    for item in gdf.columns:
+        cols += item + ", "
+    shape = str(gdf.shpae)
+    
+    
     result = dict()
     result["name"] = CM_NAME
-    result["indicator"] = indicators
+    result["indicator"] = indicators + [{"unit": "GWh", "name": "columns","value": cols},
+                                  {"unit": "GWh", "name": "gdf shape","value": shape},
+                                  ]
     result["graphics"] = []
 
     result["vector_layers"] = [

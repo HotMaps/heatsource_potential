@@ -349,7 +349,7 @@ def calculation(
         wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
         print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
     
-    zip = zipfile.ZipFile(wwtp_zip)
+    zip = ZipFile(wwtp_zip)
     # available files in the container
     print("shapefile name: ", wwtp_out)
     print("########## files in zip file")

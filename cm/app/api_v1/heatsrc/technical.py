@@ -196,7 +196,7 @@ def tech_potential(
         print(f"\n\n» Compute buffer around WWTP of {distance}")
         buffer(
             points=wwtp_plants,
-            distance=distance,
+            distance=int(distance),
             buffpoints=f"{wwtp_plants}__buf{distance}m",
             urban_areas=urban_areas,
             overwrite=overwrite,

@@ -365,38 +365,44 @@ def calculation(
     result["vector_layers"] = [
         {
             "name": "Heatsource potential",
-            "path": wwtp_zip,  # os.path.join(output_directory, wwtp_zip),
-            '''
-            "type": "custom",
-            "symbology": [
-                {
-                    "red": 24,
-                    "green": 139,
-                    "blue": 125,
-                    "opacity": 0.8,
-                    "value": "Suitable",
-                    "label": "Suitable",
-                },
-                {
-                    "red": 217,
-                    "green": 194,
-                    "blue": 89,
-                    "opacity": 0.8,
-                    "value": "Conditionally",
-                    "label": "Conditionally",
-                },
-                {
-                    "red": 243,
-                    "green": 70,
-                    "blue": 22,
-                    "opacity": 0.8,
-                    "value": "Not suitable",
-                    "label": "Not suitable",
-                },
-            ],
-            '''
+            "path": wwtp_zip,
         },
     ]
+    '''
+    # result["vector_layers"] = [
+        # {
+            # "name": "Heatsource potential",
+            # "path": wwtp_zip,  # os.path.join(output_directory, wwtp_zip),
+            # "type": "custom",
+            # "symbology": [
+                # {
+                    # "red": 24,
+                    # "green": 139,
+                    # "blue": 125,
+                    # "opacity": 0.8,
+                    # "value": "Suitable",
+                    # "label": "Suitable",
+                # },
+                # {
+                    # "red": 217,
+                    # "green": 194,
+                    # "blue": 89,
+                    # "opacity": 0.8,
+                    # "value": "Conditionally",
+                    # "label": "Conditionally",
+                # },
+                # {
+                    # "red": 243,
+                    # "green": 70,
+                    # "blue": 22,
+                    # "opacity": 0.8,
+                    # "value": "Not suitable",
+                    # "label": "Not suitable",
+                # },
+            # ],
+        # },
+    # ]
+    '''
     result["raster_layers"] = []
     print("result", result)
     return result

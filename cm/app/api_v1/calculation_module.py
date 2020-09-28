@@ -354,7 +354,7 @@ def calculation(
     cols = "columns: "
     for item in gdf.columns:
         cols += item + ", "
-    shape = str(gdf.shpae)
+    shape = str(gdf.shape)
     
     
     result = dict()

@@ -348,7 +348,16 @@ def calculation(
         )
         wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
         print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
-
+    
+    zip = zipfile.ZipFile(wwtp_zip)
+    # available files in the container
+    print("shapefile name: ", wwtp_out)
+    print("########## files in zip file")
+    print(zip.namelist())
+    size = sum([zinfo.file_size for zinfo in  wwtp_zip.filelist])
+    zip_kb = float(size)/1000 #kB
+    print("#################", zip_kb)
+                  
     result = dict()
     result["name"] = CM_NAME
     result["indicator"] = indicators
@@ -357,6 +366,7 @@ def calculation(
         {
             "name": "Heatsource potential",
             "path": wwtp_zip,  # os.path.join(output_directory, wwtp_zip),
+            '''
             "type": "custom",
             "symbology": [
                 {
@@ -384,6 +394,7 @@ def calculation(
                     "label": "Not suitable",
                 },
             ],
+            '''
         },
     ]
     result["raster_layers"] = []

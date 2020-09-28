@@ -348,61 +348,46 @@ def calculation(
         )
         wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
         print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
-    
-    zip = ZipFile(wwtp_zip)
-    # available files in the container
-    print("shapefile name: ", wwtp_out)
-    print("########## files in zip file")
-    print(zip.namelist())
-    size = sum([zinfo.file_size for zinfo in  wwtp_zip.filelist])
-    zip_kb = float(size)/1000 #kB
-    print("#################", zip_kb)
-                  
+
     result = dict()
     result["name"] = CM_NAME
     result["indicator"] = indicators
     result["graphics"] = []
+
     result["vector_layers"] = [
         {
             "name": "Heatsource potential",
-            "path": wwtp_zip,
+            "path": wwtp_zip,  # os.path.join(output_directory, wwtp_zip),
+            "type": "custom",
+            "symbology": [
+                {
+                    "red": 24,
+                    "green": 139,
+                    "blue": 125,
+                    "opacity": 0.8,
+                    "value": "Suitable",
+                    "label": "Suitable",
+                },
+                {
+                    "red": 217,
+                    "green": 194,
+                    "blue": 89,
+                    "opacity": 0.8,
+                    "value": "Conditionally",
+                    "label": "Conditionally",
+                },
+                {
+                    "red": 243,
+                    "green": 70,
+                    "blue": 22,
+                    "opacity": 0.8,
+                    "value": "Not suitable",
+                    "label": "Not suitable",
+                },
+            ],
         },
     ]
-    '''
-    # result["vector_layers"] = [
-        # {
-            # "name": "Heatsource potential",
-            # "path": wwtp_zip,  # os.path.join(output_directory, wwtp_zip),
-            # "type": "custom",
-            # "symbology": [
-                # {
-                    # "red": 24,
-                    # "green": 139,
-                    # "blue": 125,
-                    # "opacity": 0.8,
-                    # "value": "Suitable",
-                    # "label": "Suitable",
-                # },
-                # {
-                    # "red": 217,
-                    # "green": 194,
-                    # "blue": 89,
-                    # "opacity": 0.8,
-                    # "value": "Conditionally",
-                    # "label": "Conditionally",
-                # },
-                # {
-                    # "red": 243,
-                    # "green": 70,
-                    # "blue": 22,
-                    # "opacity": 0.8,
-                    # "value": "Not suitable",
-                    # "label": "Not suitable",
-                # },
-            # ],
-        # },
-    # ]
-    '''
+
     result["raster_layers"] = []
     print("result", result)
     return result

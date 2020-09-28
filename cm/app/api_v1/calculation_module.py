@@ -361,6 +361,8 @@ def calculation(
     result["name"] = CM_NAME
     result["indicator"] = indicators + [{"unit": "GWh", "name": cols,"value": 0},
                                   {"unit": "GWh", "name": "gdf shape: " + shape,"value": 0},
+                                  {"unit": "GWh", "name": f"{output_directory} => {wwtp_out} => {wwtp_zip}","value": 0},
+                                  # {"unit": "GWh", "name": str(gdf.head()), "value": 0},
                                   ]
     result["graphics"] = []
 

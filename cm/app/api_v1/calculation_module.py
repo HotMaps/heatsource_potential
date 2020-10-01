@@ -351,16 +351,17 @@ def calculation(
     
     gdf = gpd.read_file(wwtp_out)
     non_rows = gdf.color.values == None
-    gdf.loc[non_rows, 'color'] = "#F34616"
-    gdf.loc[non_rows, 'fillColor'] = "#F34616"
-    gdf.loc[:, 'opacity'] = "0.8"
+    if True in non_rows:
+        gdf.loc[non_rows, 'color'] = "#F34616"
+        gdf.loc[non_rows, 'fillColor'] = "#F34616"
+        gdf.loc[:, 'opacity'] = "0.8"
     gdf = gdf.to_crs('EPSG:3035')
     cols = list(gdf.columns)
     # send color columns to the end
     for item in ['color', 'fillColor', 'opacity', 'geometry']:
         cols.pop(cols.index(item))
         cols.append(item)
-    gdf = gdf[cols]   
+    gdf = gdf[cols].copy()   
     
     gdf.to_file(wwtp_out)
     

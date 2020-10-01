@@ -348,15 +348,16 @@ def calculation(
             f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
         )
     
-    wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
-    print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
     
     gdf = gpd.read_file(wwtp_out)
-    cols = "columns: "
-    for item in gdf.columns:
-        cols += item + ", "
-    shape = str(gdf.shape)
+    non_rows = gdf.color.values == None
+    gdf.color[non_rows] = "#F34616"
+    gdf.fillColor[non_rows] = "#F34616"
+    gdf.opacity = "0.8"
+    gdf.to_file(wwtp_out)
     
+    wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
+    print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
     
     result = dict()
     result["name"] = CM_NAME

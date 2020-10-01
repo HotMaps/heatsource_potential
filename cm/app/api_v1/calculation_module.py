@@ -347,8 +347,9 @@ def calculation(
         print(
             f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
         )
-        wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
-        print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
+    
+    wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
+    print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
     
     gdf = gpd.read_file(wwtp_out)
     cols = "columns: "

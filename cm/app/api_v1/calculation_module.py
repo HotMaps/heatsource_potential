@@ -351,9 +351,9 @@ def calculation(
     
     gdf = gpd.read_file(wwtp_out)
     non_rows = gdf.color.values == None
-    gdf.color[non_rows] = "#F34616"
-    gdf.fillColor[non_rows] = "#F34616"
-    gdf.opacity = "0.8"
+    gdf.loc[non_rows, 'color'] = "#F34616"
+    gdf.loc[non_rows, 'fillColor'] = "#F34616"
+    gdf.loc[:, 'opacity'] = "0.8"
     gdf.to_file(wwtp_out)
     
     wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)

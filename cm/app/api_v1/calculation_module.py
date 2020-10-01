@@ -354,6 +354,14 @@ def calculation(
     gdf.loc[non_rows, 'color'] = "#F34616"
     gdf.loc[non_rows, 'fillColor'] = "#F34616"
     gdf.loc[:, 'opacity'] = "0.8"
+    gdf = gdf.to_crs('EPSG:3035')
+    cols = list(gdf.columns)
+    # send color columns to the end
+    for item in ['color', 'fillColor', 'opacity', 'geometry']:
+        cols.pop(cols.index(item))
+        cols.append(item)
+    gdf = gdf[cols]   
+    
     gdf.to_file(wwtp_out)
     
     wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
@@ -367,7 +375,8 @@ def calculation(
     result["vector_layers"] = [
         {
             "name": "Heatsource potential",
-            "path": wwtp_zip,  # os.path.join(output_directory, wwtp_zip),
+            #"path": wwtp_zip,  
+            path": os.path.join(output_directory, wwtp_zip),
             "type": "custom",
             "symbology": [
                 {

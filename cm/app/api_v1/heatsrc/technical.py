@@ -58,8 +58,9 @@ WWTP = "wwtp"
 def run_command(*args, **kwargs):
     """Wrap pygrass.Module.run method to log commands"""
     kwargs["run_"] = False
+    kwargs["quiet"] = True
     mod = Module(*args, **kwargs)
-    print(f"\n» Execute: `{' '.join(mod.make_cmd())}`")
+    # print(f"\n» Execute: `{' '.join(mod.make_cmd())}`")
     mod.run()
     return mod
 
@@ -221,9 +222,9 @@ def tech_potential(
         columns=",".join(f"{cname} {ctype}" for cname, ctype in cols),
     )
 
-    run_command("db.describe", flags="c", table=wwtp_plants)
-    run_command("db.describe", flags="c", table=f"{wwtp_plants}__buf{dist_min}m")
-    run_command("db.describe", flags="c", table=f"{wwtp_plants}__buf{dist_max}m")
+    # run_command("db.describe", flags="c", table=wwtp_plants)
+    # run_command("db.describe", flags="c", table=f"{wwtp_plants}__buf{dist_min}m")
+    # run_command("db.describe", flags="c", table=f"{wwtp_plants}__buf{dist_max}m")
 
     print("\n\n» Update WWTP columns")
     for (dlabel, clabel), sustain in SUSTAINABILITY.unstack().items():
@@ -322,7 +323,7 @@ def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0):
         "v.buffer", input=wwtp_plants, output=wwtp_buf, distance=buffer, flags="t"
     )
 
-    run_command("db.describe", flags="c", table=wwtp_buf)
+    # run_command("db.describe", flags="c", table=wwtp_buf)
 
     run_command(
         "v.out.ogr",

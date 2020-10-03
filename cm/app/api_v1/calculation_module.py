@@ -1,4 +1,5 @@
 # from osgeo import gdal
+import datetime
 import io
 import logging
 import os
@@ -221,7 +222,8 @@ def calculation(
         print("result", result)
         return result
 
-    print("=" * 50)
+    print("\n\n\n" + "=" * 30 + f"  {datetime.datetime.now():%Y-%m-%d %H:%M:%S}  " + "=" * 30 )
+    
     print("=> inputs_raster_selection")
     pprint(inputs_raster_selection)
     print("=> inputs_vector_selection")
@@ -318,7 +320,7 @@ def calculation(
             subset_columns="power",
         )
 
-        # compute the tech potential
+        print("=> Compute the tech potential")
         try:
             tech.tech_potential(
                 wwtp_plants=WWTP,
@@ -338,10 +340,10 @@ def calculation(
             print(f"Issue in mapset: {tmp._kwopen['mapset']}")
             raise exc
 
-        # extract indicators
+        print("=> Extract indicators")
         indicators = extract_inidicators(WWTP, warnings)
 
-        # export result
+        print("=> export result")
         tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=750.0)
         # copy the output back to the repository to have a cache
         print(
@@ -366,7 +368,7 @@ def calculation(
     gdf.to_file(wwtp_out)
     
     wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
-    print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
+    print(f"CM OUTPUT {datetime.datetime.now():%Y-%m-%d %H:%M:%S}: {output_directory} => {wwtp_out} => {wwtp_zip}")
     
     result = dict()
     result["name"] = CM_NAME

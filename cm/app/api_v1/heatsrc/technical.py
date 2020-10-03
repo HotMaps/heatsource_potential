@@ -324,13 +324,13 @@ def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0):
 
     run_command("db.describe", flags="c", table=wwtp_buf)
 
-    # export
     run_command(
         "v.out.ogr",
         input=wwtp_buf,
         output=wwtp_out,
         format="ESRI_Shapefile",
     )
+    print(f"Exported output to {wwtp_out}")
 
 
 def create_location(

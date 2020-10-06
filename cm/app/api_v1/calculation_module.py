@@ -344,7 +344,7 @@ def calculation(
         indicators = extract_inidicators(WWTP, warnings)
 
         print("=> export result")
-        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=750.0)
+        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=2000.0)
         # copy the output back to the repository to have a cache
         print(
             f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
@@ -356,7 +356,7 @@ def calculation(
     if True in non_rows:
         gdf.loc[non_rows, 'color'] = "#F34616"
         gdf.loc[non_rows, 'fillColor'] = "#F34616"
-        gdf.loc[:, 'opacity'] = "0.8"
+        gdf.loc[:, 'opacity'] = "0.9"
     gdf = gdf.to_crs('EPSG:3035')
     cols = list(gdf.columns)
     # send color columns to the end

@@ -344,7 +344,7 @@ def calculation(
         indicators = extract_inidicators(WWTP, warnings)
 
         print("=> export result")
-        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=2000.0)
+        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=1.0)
         # copy the output back to the repository to have a cache
         print(
             f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
@@ -364,7 +364,10 @@ def calculation(
         cols.pop(cols.index(item))
         cols.append(item)
     gdf = gdf[cols].copy()   
-    
+    geometries = []
+    for geom in gdf.geometry:
+        geometries.append(geom.buffer(2000))
+    gdf.loc[:, 'geometry'] = geometries
     gdf.to_file(wwtp_out)
     
     wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)

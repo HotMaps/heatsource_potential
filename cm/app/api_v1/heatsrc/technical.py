@@ -329,6 +329,8 @@ def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0):
         "v.out.ogr",
         input=wwtp_buf,
         output=wwtp_out,
+        type="area",
+        flags="ec",
         format="ESRI_Shapefile",
     )
     print(f"Exported output to {wwtp_out}")

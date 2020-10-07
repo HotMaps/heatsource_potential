@@ -369,6 +369,7 @@ def calculation(
         geometries.append(geom.buffer(2000))
     gdf.loc[:, 'geometry'] = geometries
     gdf.to_file(wwtp_out)
+    gdf = None
     
     wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
     print(f"CM OUTPUT {datetime.datetime.now():%Y-%m-%d %H:%M:%S}: {output_directory} => {wwtp_out} => {wwtp_zip}")

@@ -377,7 +377,7 @@ def calculation(
 
     result["vector_layers"] = [
         {
-            "name": "Heatsource potential",
+            "name": "Heatsource potential - shapefile",
             "path": wwtp_zip,
             "type": "custom",
             "symbology": [

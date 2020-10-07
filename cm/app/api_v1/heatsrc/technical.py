@@ -329,7 +329,7 @@ def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0):
         "v.out.ogr",
         input=wwtp_buf,
         output=wwtp_out,
-        type="area",
+        output_type="boundary",
         flags="es",
         format="ESRI_Shapefile",
     )

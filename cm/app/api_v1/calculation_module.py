@@ -1,4 +1,5 @@
 # from osgeo import gdal
+import datetime
 import io
 import logging
 import os
@@ -9,6 +10,7 @@ import tempfile
 from pprint import pprint
 from shutil import copyfile
 from zipfile import ZipFile
+import geopandas as gpd
 
 import pandas as pd
 import requests
@@ -144,15 +146,16 @@ def extract_inidicators(wwtp_plants, indicators=None):
     if stdout:
         res = pd.read_csv(io.StringIO(stdout), sep="|", header=0)
         for suit in res["suitability"].drop_duplicates():
-            idx = res["suitability"] == suit
-            pwr = res.loc[idx, "power"]
-            indicators.append(
-                dict(
-                    unit="kW",
-                    name=f"{idx.sum()} heatsources classified as {suit}, total power",
-                    value=f"{pwr.sum()}",
+            if str(suit).lower() != "nan":
+                idx = res["suitability"] == suit
+                pwr = res.loc[idx, "power"]
+                indicators.append(
+                    dict(
+                        unit="kW",
+                        name=f"{idx.sum()} heatsources classified as {suit}, total power",
+                        value=f"{pwr.sum()}",
+                    )
                 )
-            )
     return indicators
 
 
@@ -219,7 +222,8 @@ def calculation(
         print("result", result)
         return result
 
-    print("=" * 50)
+    print("\n\n\n" + "=" * 30 + f"  {datetime.datetime.now():%Y-%m-%d %H:%M:%S}  " + "=" * 30 )
+    
     print("=> inputs_raster_selection")
     pprint(inputs_raster_selection)
     print("=> inputs_vector_selection")
@@ -316,7 +320,7 @@ def calculation(
             subset_columns="power",
         )
 
-        # compute the tech potential
+        print("=> Compute the tech potential")
         try:
             tech.tech_potential(
                 wwtp_plants=WWTP,
@@ -336,29 +340,79 @@ def calculation(
             print(f"Issue in mapset: {tmp._kwopen['mapset']}")
             raise exc
 
-        # extract indicators
+        print("=> Extract indicators")
         indicators = extract_inidicators(WWTP, warnings)
 
-        # export result
-        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out)
+        print("=> export result")
+        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=1.0)
         # copy the output back to the repository to have a cache
         print(
             f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
         )
-        wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
-        print(f"{output_directory} => {wwtp_out} => {wwtp_zip}")
-
+    
+    
+    gdf = gpd.read_file(wwtp_out)
+    non_rows = gdf.color.values == None
+    if True in non_rows:
+        gdf.loc[non_rows, 'color'] = "#F34616"
+        gdf.loc[non_rows, 'fillColor'] = "#F34616"
+        gdf.loc[:, 'opacity'] = "0.8"
+    gdf = gdf.to_crs('EPSG:3035')
+    cols = list(gdf.columns)
+    # send color columns to the end
+    for item in ['color', 'fillColor', 'opacity', 'geometry']:
+        cols.pop(cols.index(item))
+        cols.append(item)
+    gdf = gdf[cols].copy()   
+    geometries = []
+    for geom in gdf.geometry:
+        geometries.append(geom.buffer(2000))
+    gdf.loc[:, 'geometry'] = geometries
+    gdf.to_file(wwtp_out)
+    gdf = None
+    
+    wwtp_zip = create_zip_shapefiles(output_directory, wwtp_out)
+    print(f"CM OUTPUT {datetime.datetime.now():%Y-%m-%d %H:%M:%S}: {output_directory} => {wwtp_out} => {wwtp_zip}")
+    
     result = dict()
     result["name"] = CM_NAME
     result["indicator"] = indicators
     result["graphics"] = []
+
     result["vector_layers"] = [
         {
-            "name": "Heatsource potential",
-            "path": os.path.join(output_directory, wwtp_zip),
-            "type": "wwtp_power",
+            "name": "Heatsource potential - shapefile",
+            "path": wwtp_zip,
+            "type": "custom",
+            "symbology": [
+                {
+                    "red": 24,
+                    "green": 139,
+                    "blue": 125,
+                    "opacity": 0.8,
+                    "value": "Suitable",
+                    "label": "Suitable",
+                },
+                {
+                    "red": 217,
+                    "green": 194,
+                    "blue": 89,
+                    "opacity": 0.8,
+                    "value": "Conditionally",
+                    "label": "Conditionally",
+                },
+                {
+                    "red": 243,
+                    "green": 70,
+                    "blue": 22,
+                    "opacity": 0.8,
+                    "value": "Not suitable",
+                    "label": "Not suitable",
+                },
+            ],
         },
     ]
+
     result["raster_layers"] = []
     print("result", result)
     return result

@@ -1,5 +1,8 @@
 FROM hotmaps/grass-py3-pdal:7.8
 MAINTAINER Pietro Zambelli <pietro.zambelli@eurac.edu>
+
+RUN apt-get update && apt-get install -y supervisor && apt-get clean
+
 ENV PACKAGES="\
     ca-certificates \
     supervisor \

@@ -300,7 +300,7 @@ def tech_stats(wwtp_plants: str, areas: str, columns: List[str]):
     pass
 
 
-def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0):
+def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0, mapset: str = None):
     # run_command(
     #     "v.out.ogr", input=nuts3, output=nuts3_wwtp_potential, format=ESRI_Shapefile
     # )
@@ -311,7 +311,7 @@ def tech_export(wwtp_plants: str, wwtp_out: str, buffer: float = 1.0):
     from grass.pygrass.vector import VectorTopo
 
     # overcome the DBF limitation on the maximum column lenght
-    with VectorTopo(wwtp_plants) as vect:
+    with VectorTopo(wwtp_plants, mapset) as vect:
         for col in vect.table.columns.names():
             if len(col) > 10:
                 vect.table.columns.rename(col, col[:10])

@@ -344,7 +344,7 @@ def calculation(
         indicators = extract_inidicators(WWTP, warnings)
 
         print("=> export result")
-        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=1.0)
+        tech.tech_export(wwtp_plants=WWTP, wwtp_out=wwtp_out, buffer=1.0, mapset=tmp._kwopen['mapset'])
         # copy the output back to the repository to have a cache
         print(
             f"\n\n=> Compute the heatsource potential using: {within_dist} and {near_dist} m. Done!"
